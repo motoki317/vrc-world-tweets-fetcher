@@ -1,0 +1,11 @@
+/.vscode
+/.idea
+
+/.dockerignore
+/.env
+/.gitignore
+/docker-compose.yaml
+/Dockerfile
+/LICENSE
+/README.md
+/vrc-world-tweets-fetcher

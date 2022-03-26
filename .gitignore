@@ -1,0 +1,5 @@
+/.vscode
+/.idea
+
+/.env
+/vrc-world-tweets-fetcher

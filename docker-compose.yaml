@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  app:
+    container_name: vrc-fetcher-app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      HANDLERS:
+      TWITTER_BEARER_TOKEN:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: vrc_fetcher
+    entrypoint: ./wait-for-it.sh -h mysql -p 3306 --
+    command: ./main listen
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: vrc-fetcher-mysql
+    image: mariadb:10.7.3
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: vrc_fetcher
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_general_ci
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql:/var/lib/mysql
+
+volumes:
+  mysql:
