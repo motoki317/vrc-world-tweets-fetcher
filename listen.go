@@ -197,10 +197,10 @@ func cmdListen() error {
 	log.Println("Now receiving new tweets...")
 
 	sigChan := make(chan os.Signal)
-	signal.Notify(sigChan, syscall.SIGINT)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 	select {
 	case <-sigChan:
-		log.Println("Received SIGINT signal, closing the stream...")
+		log.Println("Received SIGTERM or SIGINT signal, closing the stream...")
 	case err := <-errChan:
 		cancel()
 		return fmt.Errorf("received error from stream, abnormal shutdown: %w", err)
