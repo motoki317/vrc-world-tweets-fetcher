@@ -122,21 +122,26 @@ func (s *Stream) Start(ctx context.Context) error {
 
 	log.Println("Connected! Now receiving new tweets...")
 
-	decodeChan := make(chan error)
+	type decodeResult struct {
+		resp *gotwtr.ConnectToStreamResponse
+		err  error
+	}
+	decodeChan := make(chan decodeResult)
 	for {
-		var response gotwtr.ConnectToStreamResponse
 		go func() {
-			decodeChan <- dec.Decode(&response)
+			var response gotwtr.ConnectToStreamResponse
+			err := dec.Decode(&response)
+			decodeChan <- decodeResult{resp: &response, err: err}
 		}()
 		select {
-		case err := <-decodeChan:
+		case res := <-decodeChan:
 			if err != nil {
 				if err == io.EOF {
 					return nil
 				}
 				return err
 			}
-			s.tweets <- &response
+			s.tweets <- res.resp
 		case <-s.done:
 			return nil
 		}
