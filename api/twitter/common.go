@@ -8,9 +8,13 @@ import (
 	"github.com/motoki317/vrc-world-tweets-fetcher/utils"
 )
 
-var c *gotwtr.Client
+var (
+	hc    *http.Client
+	c     *gotwtr.Client
+	token = utils.MustGetEnv("TWITTER_BEARER_TOKEN")
+)
 
 func init() {
-	hc := http.Client{}
-	c = gotwtr.New(utils.MustGetEnv("TWITTER_BEARER_TOKEN"), gotwtr.WithHTTPClient(&hc))
+	hc = &http.Client{}
+	c = gotwtr.New(token, gotwtr.WithHTTPClient(hc))
 }

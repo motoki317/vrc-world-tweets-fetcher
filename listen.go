@@ -170,16 +170,22 @@ func cmdListen() error {
 	log.Println("Connecting to the stream...")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	tweetsChan := make(chan gotwtr.ConnectToStreamResponse, 5)
-	errChan := make(chan error, 5)
-	stream := twitter.ConnectToStream(
-		ctx, tweetsChan, errChan,
-		&gotwtr.ConnectToStreamOption{
+	tweetsChan := make(chan *gotwtr.ConnectToStreamResponse, 5)
+	stream, err := twitter.NewStream(
+		tweetsChan,
+		&twitter.ConnectToStreamOption{
 			Expansions:  []gotwtr.Expansion{"author_id"},
 			TweetFields: []gotwtr.TweetField{"id", "author_id", "entities"},
 			UserFields:  []gotwtr.UserField{"name"},
 		},
 	)
+
+	streamErr := make(chan error)
+	go func() {
+		if err := stream.StartWithAutoReconnect(ctx); err != nil {
+			streamErr <- err
+		}
+	}()
 	go func() {
 		for {
 			select {
@@ -187,21 +193,19 @@ func cmdListen() error {
 				if !ok {
 					return
 				}
-				l.processTweet(&event)
+				l.processTweet(event)
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	log.Println("Now receiving new tweets...")
-
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 	select {
 	case <-sigChan:
 		log.Println("Received SIGTERM or SIGINT signal, closing the stream...")
-	case err := <-errChan:
+	case err := <-streamErr:
 		cancel()
 		return fmt.Errorf("received error from stream, abnormal shutdown: %w", err)
 	}
