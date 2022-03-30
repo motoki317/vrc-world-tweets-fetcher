@@ -105,6 +105,7 @@ func (s *Stream) Start(ctx context.Context) error {
 		return fmt.Errorf("connect to stream new request with ctx: %w", err)
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	s.option.addQuery(req)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
