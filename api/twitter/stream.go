@@ -95,6 +95,33 @@ func (s *Stream) StartWithAutoReconnect(ctx context.Context) error {
 	}
 }
 
+func (s *Stream) readLoop(dec *json.Decoder) error {
+	type decodeResult struct {
+		resp *gotwtr.ConnectToStreamResponse
+		err  error
+	}
+	decodeChan := make(chan decodeResult)
+	for {
+		go func() {
+			var response gotwtr.ConnectToStreamResponse
+			err := dec.Decode(&response)
+			decodeChan <- decodeResult{resp: &response, err: err}
+		}()
+		select {
+		case res := <-decodeChan:
+			if res.err != nil {
+				if res.err == io.EOF {
+					return nil
+				}
+				return res.err
+			}
+			s.tweets <- res.resp
+		case <-s.done:
+			return nil
+		}
+	}
+}
+
 // Start connects to stream, and blocks on success.
 func (s *Stream) Start(ctx context.Context) error {
 	s.wg.Add(1)
@@ -119,34 +146,9 @@ func (s *Stream) Start(ctx context.Context) error {
 			URL:     req.URL.String(),
 		}
 	}
-	dec := json.NewDecoder(resp.Body)
 
 	log.Println("Connected! Now receiving new tweets...")
-
-	type decodeResult struct {
-		resp *gotwtr.ConnectToStreamResponse
-		err  error
-	}
-	decodeChan := make(chan decodeResult)
-	for {
-		go func() {
-			var response gotwtr.ConnectToStreamResponse
-			err := dec.Decode(&response)
-			decodeChan <- decodeResult{resp: &response, err: err}
-		}()
-		select {
-		case res := <-decodeChan:
-			if err != nil {
-				if err == io.EOF {
-					return nil
-				}
-				return err
-			}
-			s.tweets <- res.resp
-		case <-s.done:
-			return nil
-		}
-	}
+	return s.readLoop(json.NewDecoder(resp.Body))
 }
 
 func (s *Stream) Stop() {
