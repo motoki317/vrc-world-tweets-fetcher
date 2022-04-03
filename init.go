@@ -13,7 +13,7 @@ import (
 	"github.com/motoki317/vrc-world-tweets-fetcher/api/twitter"
 )
 
-const targetRuleValue = "(#MadeWithVRChat OR #VRChat_world OR #VRChat_world紹介 OR #VRChatワールド紹介) -is:retweet -is:reply -is:quote"
+const targetRuleValue = "(#MadeWithVRChat OR #VRChat_world OR #VRChat_world紹介 OR #VRChatワールド紹介) -is:retweet -is:quote"
 
 var targetRule = &gotwtr.AddRule{Value: targetRuleValue, Tag: ""}
 
