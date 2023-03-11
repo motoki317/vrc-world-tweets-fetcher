@@ -3,7 +3,6 @@ package vrchat
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/motoki317/vrc-world-tweets-fetcher/utils"
 )
@@ -16,11 +15,14 @@ type World struct {
 }
 
 func FetchVRChatWorldInfo(worldID utils.VRChatWorldID) (*World, error) {
-	client := http.Client{
-		Timeout: 5 * time.Second,
-	}
 	requestURL := fmt.Sprintf("%s/worlds/%s?apiKey=%s", vrchatAPIBasePath, worldID, vrchatAPIKey)
-	resp, err := client.Get(requestURL)
+	req, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", userAgent)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
